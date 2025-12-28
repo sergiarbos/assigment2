@@ -1,12 +1,21 @@
-def read_csv(file_name):
+def read_csv(file_name, ignore_first = False, ignore_col = False):
     table = []
     with open(file_name) as f:
         for i, line in enumerate(f):
             line = line.strip()
-            if i == 0:
+
+            # Heading of the dataset has to be ignored for Decision Trees
+            if ignore_first and i == 0:
                 continue
             parsed = []
-            for entry in line.split(","):
+
+            # First column, identifier of the dataset (K-Means)
+            parts = line.split(",")
+            if ignore_col:
+                parts = parts [1:]
+
+            # If we are in K-Means, the line first part (id) will be ignored
+            for entry in parts:
                 entry = _cast_to(entry)
                 parsed.append(entry)
             table.append(parsed)

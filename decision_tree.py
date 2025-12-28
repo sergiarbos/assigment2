@@ -28,6 +28,9 @@ def entropy(labels):
         prob = count / total
         imp -= prob * _log2(prob)
 
+    # File error?
+    return imp
+
 
 class DecisionTreeClassifier:
     def __init__(self, scoref=gini, beta=0, prune_threshold=0):
@@ -58,6 +61,9 @@ class DecisionTreeClassifier:
     def _iterative_build_tree(self, observations, labels):
         """YOUR CODE HERE"""
         self.tree_ = None
+
+        stack = 
+
         raise NotImplementedError("TODO")
 
     def _prune_tree(self):
@@ -199,31 +205,57 @@ def main(args):
     # Set the random generator
     rng = Random(args.seed)
 
-    # Load the dataset
-    dataset = read_csv(args.dataset)
+    # Load the dataset 
+    # (We ignore the first row)
+    dataset = read_csv(args.dataset, ignore_first = True)
     observations, labels = split_observations_and_labels(dataset)
 
     # Split the dataset into training and test sets
     # NOTE: consider args.test_ratio and args.seed
-    """YOUR CODE HERE"""
+    
+    # As many idxs as observations are needed
+    indexs = list(range(len(observations)))
+    rng.shuffle(indexs)
+
+    # After the shuffle, we rearrange the obs and the labels in new lists
+    shuffled_obs = [observations[i] for i in indexs]
+    shuffled_labels = [labels[i] for i in indexs]
+
+    # We get the "frontier" for the training obs and the test obs
+    split_idx = int(len(observations) * (1 - args.test_ratio))
+
+    # With the frontier, we classify the train and testing labels and obs
+    train_observations = shuffled_obs[:split_idx]
+    train_labels = shuffled_labels[:split_idx]
+    
+    test_observations = shuffled_obs[split_idx:]
+    test_labels = shuffled_labels[split_idx:]
+
+    # We get the function
+    if args.scoref == "entropy":
+        score_function = entropy 
+    else:
+        score_function = gini
 
     # Instantiate the decision tree classifier
     dec_tree = DecisionTreeClassifier(
-        scoref=args.scoref, beta=args.beta, prune_threshold=args.prune_threshold
+        scoref=score_function, beta=args.beta, prune_threshold=args.prune_threshold
     )
 
     # Train the decision tree using the training data
-    """YOUR CODE HERE"""
+    print(f"Training tree with {len(train_observations)} observations...")
+    dec_tree.fit(train_observations, train_labels)
 
     # Print the tree structure
     print("Tree Structure:")
     dec_tree.tree_.print_tree()
 
     # Predict over the test set
-    """YOUR CODE HERE"""
+    predictions = dec_tree.predict(test_observations)
 
     # Evaluate these predictions using the accuracy score and print the information
-    """YOUR CODE HERE"""
+    accuracy = dec_tree.score(test_observations, test_labels)
+    print(f"Accuracy: {accuracy * 100:.2f}%")
 
 
 def parse_args():
