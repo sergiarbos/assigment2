@@ -5,6 +5,7 @@ from typing import Optional
 import argparse
 from utils import read_csv, split_observations_and_labels
 from random import Random
+from itertools import combinations
 
 
 def gini(labels) -> float:
@@ -59,12 +60,90 @@ class DecisionTreeClassifier:
         return correct / len(data)
 
     def _iterative_build_tree(self, observations, labels):
-        """YOUR CODE HERE"""
         self.tree_ = None
 
-        stack = 
+        # Firstly, we initialize the stack with all the raw data to create the first distinction (node), so it has no parent and is the root.
+        stack = [(observations, labels, None, "root")]
 
-        raise NotImplementedError("TODO")
+        while stack:
+            current_obs, current_labels, parent, branch = stack.pop()
+            
+            # Purity of the current data
+            current_score = self.scoref(current_labels)
+            
+            best_gain = 0.0
+            best_criteria = None
+            best_sets = None
+
+            # If it is not pure, we seek for the best separation point
+            if current_score > 0:
+                num_columns = len(current_obs[0])
+                
+                # For each attribute
+                for col in range(num_columns):
+                    
+                    # We list the values of the given set
+                    unique_vals = list(_unique_values(current_obs, col))
+                    candidates = []
+
+                    # If the column first elem is numeric (we assume all the rest will be, it is the common thing), we just continue and the divideset will throw == or >< questions
+                    if not unique_vals or _is_numeric(unique_vals[0]):
+                        candidates = unique_vals
+                    else:
+                        """(i.e., consider queries of ∈ instead of =)"""
+                        # For categoricals, we generate combinations of values to consider subsets (is red or green?)
+                        # We stop at half the size because splitting a group from the rest is the same as splitting the rest from that group, we avoid calculating the same twice
+                        for r in range(1, (len(unique_vals) // 2) + 1):
+                            for subset in combinations(unique_vals, r):
+                                candidates.append(list(subset))
+                    
+                    for value in candidates:
+
+                        # Divideset asks a yes or no question/condition and divides the column in two groups (the ones who satisfies the cond. and the ones who don't)
+                        set1, labels1, set2, labels2 = _divideset(current_obs, current_labels, col, value)
+
+                        # If one of the groups is empty, this separation gives us no value
+                        if not set1 or not set2:
+                            continue
+
+                        # Now we calculate how much do we really gain with this distinction from our initial state, with the information gain formula
+                        # Variable to controle the "weight" of each group, because it could be dispair in number and with this we ensure a correct representation of the gains. (And it is how the formula works)
+                        w = len(labels1) / len(current_labels)
+                        gain = current_score - w * self.scoref(labels1) - (1 - w) * self.scoref(labels2)
+
+                        # If the result is better than what we had, we shall store it, alongside witg the data (the condition (value), which column, the sets we got...)
+                        if gain > best_gain:
+                            best_gain = gain
+                            best_criteria = (col, value)
+                            best_sets = ((set1, labels1), (set2, labels2))
+
+            # After scanning all the columns and obtaining the best separation, we must decide wether we set it as a leaf or just a node to continue the process
+            # If the gain doesn't surpass Beta (criteria defined in the project) we will leave it a leaf bc it is not worth it dividing
+
+            if best_gain > self.beta and best_sets is not None:
+                # Dividing node case
+                col, val = best_criteria
+                node = Node.new_node(col, val, None, None)
+                
+                (true_obs, true_labels), (false_obs, false_labels) = best_sets
+                
+                # We add the new nodes to the stack for them to be processed later in the loop
+                stack.append((false_obs, false_labels, node, "false"))
+                stack.append((true_obs, true_labels, node, "true"))
+            else:
+                # Leaf case
+                node = Node.new_leaf(current_labels)
+
+            # We shall connect the node with it's parent
+            if parent is None:
+                # Was alr the root
+                self.tree_ = node
+            elif branch == "true":
+                # If it came from true branch
+                parent.true_branch = node
+            elif branch == "false":
+                # If it came from false branch
+                parent.false_branch = node
 
     def _prune_tree(self):
         """YOUR CODE HERE"""
@@ -100,6 +179,10 @@ class Node:
             # Print the criteria
             if _is_numeric(self.value):
                 print(f"{self.column}: <= {self.value}?")
+            
+            # To print the ∈ queries
+            elif isinstance(self.value, (list, tuple)):
+                print(f"{self.column} in {self.value}?")
             else:
                 print(f"{self.column}: {self.value}?")
             # Print the branches
@@ -160,6 +243,9 @@ def _get_query_fn(column, value):
     """
     if _is_numeric(value):
         return lambda prot: prot[column] <= value
+    elif isinstance(value, (list, tuple, set)):
+        # Modification to consider all the subsets of categorical values "(i.e., consider queries of ∈ instead of =)"
+        return lambda prot: prot[column] in value
     else:
         return lambda prot: prot[column] == value
 
