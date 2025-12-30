@@ -99,23 +99,55 @@ def main(args):
     messages, labels = read_sms(args.dataset)
 
     # Tokenize the messages
-    """YOUR CODE HERE"""
+    tokenized_messages = []
+    for msg in messages:
+        tokenized_messages.append(tokenize_sms(msg))
 
     # Split the dataset into training and test sets
     # NOTE: consider args.test_ratio and args.seed
-    """YOUR CODE HERE"""
+    indices = list(range(len(tokenized_messages)))
+    rng.shuffle(indices)
+
+    #Calcular el punt de divisio basant-nos en el ratio de test
+    split_idx = int(len(indices)*(1-args.test_ratio))
+
+    train_indices = indices[:split_idx]
+    test_indices = indices[split_idx:]
+
+    # Creem les llistes d'entrenament per a observacions i etiquetes
+    train_obs = []
+    for i in train_indices:
+        train_obs.append(tokenized_messages[i])
+
+    train_labels = []
+    for i in train_indices:
+        train_labels.append(labels[i])
+
+    # Creem les llistes de test per a observacions i etiquetes
+    test_obs = []
+    for i in test_indices:
+        test_obs.append(tokenized_messages[i])
+
+    test_labels = []
+    for i in test_indices:
+        test_labels.append(labels[i])
 
     # Instantiate the decision tree classifier
-    mnb = MultinomialNaiveBayesClassifier()
+    mnb = MultinomialNaiveBayesClassifier(assumed_probability=args.assumed_probability)
 
     # Train the classifier using the training data
-    """YOUR CODE HERE"""
+    print(f"Training model with {len(train_obs)} observations ...")
+    mnb.fit(train_obs, train_labels)
 
     # Predict over the test set
-    """YOUR CODE HERE"""
+    print("Evaluating test set...")
+    
 
     # Evaluate these predictions using the accuracy score and print the information
-    """YOUR CODE HERE"""
+    # Calculem la precisió final comparant prediccions amb etiquetes reals
+    accuracy = mnb.score(test_obs, test_labels)
+    print(f"\nResults for {args.dataset}:")
+    print(f"Accuracy: {accuracy * 100:.2f}%")
 
 
 def parse_args():
