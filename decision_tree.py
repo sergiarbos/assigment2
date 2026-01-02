@@ -146,8 +146,52 @@ class DecisionTreeClassifier:
                 parent.false_branch = node
 
     def _prune_tree(self):
-        """YOUR CODE HERE"""
-        raise NotImplementedError("TODO")
+        # Base case (if it is empty or just a leaf, there is nothing to prune)
+        if self.tree_ is None or self.tree_.is_leaf():
+            return
+
+        def _get_error(counts):
+            
+            if not counts: return 0
+            total = sum(counts.values())
+            majority = max(counts.values()) # The type with more counts is the correct prediction
+            return total - majority         # The other ones are errors
+
+        def _prune_node(node):
+            # Base case, a leaf is the bottom
+            if node.is_leaf():
+                return
+
+            # Firstly we execute the function for the children recursively (it will go all the way down)
+            _prune_node(node.true_branch)
+            _prune_node(node.false_branch)
+
+            # We make sure the possible pruned node has only leafs children so we don't cut a full tree structure
+            if node.true_branch.is_leaf() and node.false_branch.is_leaf():
+                
+                # Now, we take care of the two possibilities, what does give more error, having the two nodes or prune it into one?
+                # In here, we calculate how much error do we have now (mantaining the split)
+                error_no_prune = _get_error(node.true_branch.results) + _get_error(node.false_branch.results)
+
+                # In here, we simulate and calculate the error we would have with a merged node instead ("applying" the prune and using copy to avoid modifying the original)
+                merged_results = node.true_branch.results.copy()
+                for k, v in node.false_branch.results.items():
+                    merged_results[k] = merged_results.get(k, 0) + v
+                
+                error_prune = _get_error(merged_results)
+
+                # Here, we consider if is it worth it a prune (including the treshold specified)
+                # If the error from the merge simulation is lower, we take it
+                if error_prune <= error_no_prune + self.prune_threshold:
+                    # If we prune it, it must be converted into a leaf due to the cut and forgets its children
+                    node.results = merged_results
+                    node.true_branch = None
+                    node.false_branch = None
+                    node.column = None
+                    node.value = None
+
+        # We initiate the recursivity from the top and the logic of the func will make it descend first
+        _prune_node(self.tree_)
 
 
 @dataclass
