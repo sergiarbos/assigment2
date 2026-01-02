@@ -1,4 +1,5 @@
 import argparse
+import math
 from random import Random
 from utils import read_csv
 
@@ -10,8 +11,40 @@ class KMeans:
         self.rng = rng
 
     def fit(self, observations):
-        """YOUR CODE HERE"""
+        #Iincialitzacio aleatoria
+        index_inicials = self.rng.sample(range(len(observations)), self.k)
         self.centroids_ = []
+        for index in index_inicials:
+            #Copiem la llista per no modificar la original
+            self.centroids_.append(observations[index])
+        
+        #fiquem limit de seguretat per el bucle
+        iteracions_maximes = 100
+        for iteracio in range(iteracions_maximes):
+            #Assignem cada punt al centreide mes proper
+            nous_assignaments = []
+            suma_distancies_total = 0
+            for punt in observations:
+                distancia_minima = float('inf')
+                index_centreide_mes_proper = -1
+                for i in range(self.k):
+                    #Calculem distancia
+                    suma_quadrats = 0
+                    for d in range(len(punt)):
+                        suma_quadrats += (punt[d] - self.centroids_[i][d]) ** 2
+                    distancia_actual = 0
+                    if self.distance == "euclidean":
+                        distancia_actual = math.sqrt(suma_quadrats)
+                    elif self.distance == "squared-euclidean":
+                        distancia_actual = suma_quadrats
+
+                    if distancia_actual < distancia_minima:
+                        distancia_minima = distancia_actual
+                        index_centreide_mes_proper = i
+                nous_assignaments.append(index_centreide_mes_proper)
+                suma_distancies_total += distancia_minima
+
+
         self.distances_ = []
         self.X_assignments_ = []
         return self
