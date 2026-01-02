@@ -43,6 +43,9 @@ class KMeans:
                         index_centreide_mes_proper = i
                 nous_assignaments.append(index_centreide_mes_proper)
                 suma_distancies_total += distancia_minima
+            
+            #Recalculem els centroides
+            nous_centroides = []
 
 
         self.distances_ = []
