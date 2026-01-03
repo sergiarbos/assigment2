@@ -90,7 +90,7 @@ class DecisionTreeClassifier:
                     if not unique_vals or _is_numeric(unique_vals[0]):
                         candidates = unique_vals
                     else:
-                        """(i.e., consider queries of ∈ instead of =)"""
+                        """(consider queries of ∈ instead of =)"""
                         # For categoricals, we generate combinations of values to consider subsets (is red or green?)
                         # We stop at half the size because splitting a group from the rest is the same as splitting the rest from that group, we avoid calculating the same twice
                         for r in range(1, (len(unique_vals) // 2) + 1):
