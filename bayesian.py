@@ -48,7 +48,7 @@ class MultinomialNaiveBayesClassifier:
 
         for message in observations:
             best_category = None
-            max_log_prob = float('-inf') #valor mes baix posible
+            max_log_prob = float('-inf') #lowest possible value
 
             for category in self.docs_per_class:
                 prior_prob = self.docs_per_class[category] / self.total_docs
@@ -56,18 +56,18 @@ class MultinomialNaiveBayesClassifier:
 
                 for word in message:
                     if word in self.vocabulary:
-                        # vegades que la paraula A apareix a la categoria B / total de missatges a la categoria B
+                        # Number of times word A appears in category B / total messages in category B
                         time_in_class = self.word_count_class[category].get(word, 0)
                         basic_prob = time_in_class / self.docs_per_class[category]
                         count_a = sum(self.word_count_class[c].get(word, 0) for c in self.docs_per_class)
 
-                        # Fórmula: (pes * probabilitat_assumida + recompte(A) * p(A|B)) / (recompte(A) + pes)
+                        # Formula: (weight * assumed_probability + count(A) * p(A|B)) / (count(A) + weight)
                         weight = 1.0
                         num = (weight * self.assumed_probability) + (count_a * basic_prob)
                         den = count_a + weight
                         weighted_p = num / den
 
-                        # Sumar al total (equivalent a multiplicar probabilitats) 
+                        # Sum to the total (equivalent to multiplying probabilities)
                         log_prob += math.log(weighted_p)
 
                 if log_prob > max_log_prob:
@@ -108,13 +108,13 @@ def main(args):
     indices = list(range(len(tokenized_messages)))
     rng.shuffle(indices)
 
-    #Calcular el punt de divisio basant-nos en el ratio de test
+    # Calculate the dividing point based on the test ratio
     split_idx = int(len(indices)*(1-args.test_ratio))
 
     train_indices = indices[:split_idx]
     test_indices = indices[split_idx:]
 
-    # Creem les llistes d'entrenament per a observacions i etiquetes
+    # Create the training lists for observations and labels
     train_obs = []
     for i in train_indices:
         train_obs.append(tokenized_messages[i])
@@ -123,7 +123,7 @@ def main(args):
     for i in train_indices:
         train_labels.append(labels[i])
 
-    # Creem les llistes de test per a observacions i etiquetes
+    # Create the test lists for observations and labels
     test_obs = []
     for i in test_indices:
         test_obs.append(tokenized_messages[i])

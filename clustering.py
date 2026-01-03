@@ -23,79 +23,79 @@ class KMeans:
         # We repeat the algorithm as much as it is specified to search the best result
         for n_try in range(self.tries):
 
-            #Iincialitzacio aleatoria
+            #Random initialization
             # We select K random points from the dataset as centroids
             index_inicials = self.rng.sample(range(len(observations)), self.k)
 
             current_centroids = []
 
             for index in index_inicials:
-                #Copiem la llista per no modificar la original
+                # Copy the list so as not to modify the original
                 current_centroids.append(observations[index]) 
 
-            #fiquem limit de seguretat per el bucle per si l'algorisme no convergeix (centroides es mouen tota l'estona)
-            iteracions_maximes = 100
+            # Set a safety limit for the loop in case the algorithm doesn't converge (centroids keep moving)
+            max_iterations = 100
 
-            for iteracio in range(iteracions_maximes):
-                #Assignem cada punt al centreide mes proper
+            for iteration in range(max_iterations):
+                # Assign each point to the closest centroid
                 # Variables for this specific iteration
-                nous_assignaments = []
+                new_assignments = []
                 current_distances = []
-                suma_distancies_total = 0
+                total_distance_sum = 0
 
                 # For each point in the data, we calculate the distance to every centroid
-                for punt in observations:
-                    distancia_minima = float('inf')
-                    index_centreide_mes_proper = -1
+                for point in observations:
+                    min_distance = float('inf')
+                    index_closest_centroid = -1
 
                     for i in range(self.k):
-                        #Calculem distancia depenent del mètode que s'ha definit
-                        suma_quadrats = 0
-                        for d in range(len(punt)):
-                            suma_quadrats += (punt[d] - current_centroids[i][d]) ** 2
+                        # Calculate distance depending on the method defined
+                        sum_squares = 0
+                        for d in range(len(point)):
+                            sum_squares += (point[d] - current_centroids[i][d]) ** 2
 
-                        distancia_actual = 0
+                        current_distance = 0
 
                         if self.distance == "euclidean":
-                            distancia_actual = math.sqrt(suma_quadrats)
+                            current_distance = math.sqrt(sum_squares)
                         elif self.distance == "squared-euclidean":
-                            distancia_actual = suma_quadrats
+                            current_distance = sum_squares
 
                         # We identify the closest centroid and assign the point to that cluster
-                        if distancia_actual < distancia_minima:
-                            distancia_minima = distancia_actual
-                            index_centreide_mes_proper = i
+                        if current_distance < min_distance:
+                            min_distance = current_distance
+                            index_closest_centroid = i
 
-                    nous_assignaments.append(index_centreide_mes_proper)
-                    suma_distancies_total += distancia_minima
-                    current_distances.append(distancia_minima)
-                
-                # Recalculem els centroides
-                nous_centroides = []
+                    new_assignments.append(index_closest_centroid)
+                    total_distance_sum += min_distance
+                    current_distances.append(min_distance)
+
+                # Recalculate the centroids
+                new_centroids = []
                 for i in range(self.k):
-                    punts_cluster = [observations[idx] for idx, val in enumerate(nous_assignaments) if val == i]
+                    cluster_points = [observations[idx] for idx, val in enumerate(new_assignments) if val == i]
 
-                    if not punts_cluster:
+                    if not cluster_points:
                         # If cluster is empty, we keep the old one to not crash
-                        nous_centroides.append(current_centroids[i])
+                        new_centroids.append(current_centroids[i])
                         continue
 
                     # We calculate the mean of all points in the cluster to find new center
-                    dimensio = len(punts_cluster[0])
-                    nou_centre = [sum(p[d] for p in punts_cluster) / len(punts_cluster) for d in range(dimensio)]
-                    nous_centroides.append(nou_centre)
+                    dimension = len(cluster_points[0])
+                    new_center = [sum(p[d] for p in cluster_points) / len(cluster_points) for d in range(dimension)]
+                    new_centroids.append(new_center)
 
-                # Comprovem convergència (si no es mouen, sortim)
-                if nous_centroides == current_centroids:
+                # Check convergence (if they don't move, we exit)
+                if new_centroids == current_centroids:
                     break
 
-                current_centroids = nous_centroides
-            
+                current_centroids = new_centroids
+
             # If this execution resulted in a lower total distance than the previous best, we update it
-            if suma_distancies_total < best_total_distance:
-                best_total_distance = suma_distancies_total
+            if total_distance_sum < best_total_distance:
+                best_total_distance = total_distance_sum
                 best_centroids = current_centroids
-                best_assignments = nous_assignaments
+                best_assignments = new_assignments
                 best_distances = current_distances
 
         # Finally, we store the best results in the attributes
